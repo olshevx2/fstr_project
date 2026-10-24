@@ -84,3 +84,40 @@ class PerevalRepository:
         self.db.commit()
         self.db.refresh(pereval)
         return pereval.id
+
+# --- НОВЫЕ МЕТОДЫ ДЛЯ СПРИНТА 2 ---
+
+    def get_pereval_by_id(self, pereval_id):
+        return self.db.query(Pereval).filter(Pereval.id == pereval_id).first()
+
+    def update_pereval(self, pereval_id, data):
+        pereval = self.get_pereval_by_id(pereval_id)
+        if not pereval:
+            return False, "Запись не найдена"
+        if pereval.status != 'new':
+            return False, "Редактировать можно только записи в статусе 'new'"
+
+        pereval.beauty_title = data.get('beauty_title', pereval.beauty_title)
+        pereval.title = data.get('title', pereval.title)
+        pereval.other_titles = data.get('other_titles', pereval.other_titles)
+        pereval.connect = data.get('connect', pereval.connect)
+        pereval.add_time = data.get('add_time', pereval.add_time)
+
+        if 'coords' in data:
+            coords = self.db.query(Coords).filter(Coords.id == pereval.coord_id).first()
+            if coords:
+                coords.latitude = data['coords'].get('latitude', coords.latitude)
+                coords.longitude = data['coords'].get('longitude', coords.longitude)
+                coords.height = data['coords'].get('height', coords.height)
+
+        if 'level' in data:
+            pereval.level_winter = data['level'].get('winter', pereval.level_winter)
+            pereval.level_spring = data['level'].get('spring', pereval.level_spring)
+            pereval.level_summer = data['level'].get('summer', pereval.level_summer)
+            pereval.level_autumn = data['level'].get('autumn', pereval.level_autumn)
+
+        self.db.commit()
+        return True, "Успешно отредактировано"
+
+    def get_pereval_by_email(self, email):
+        return self.db.query(Pereval).join(User).filter(User.email == email).all()
